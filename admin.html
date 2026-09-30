@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InterClass - Espace Administrateur</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #0f172a; color: #f8fafc; padding: 20px; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #334155; margin-bottom: 25px; }
+        .logo { font-size: 1.3rem; font-weight: bold; color: #fbbf24; }
+        
+        .card { background-color: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; max-width: 600px; margin-left: auto; margin-right: auto; }
+        h2, h3 { color: #fbbf24; margin-bottom: 15px; }
+        
+        input { width: 100%; padding: 12px; margin: 10px 0 15px 0; background-color: #0f172a; border: 1px solid #475569; color: white; border-radius: 8px; font-size: 1rem; }
+        
+        .btn { width: 100%; padding: 12px; background-color: #f59e0b; color: #0f172a; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 1rem; }
+        .btn-action { padding: 8px 12px; background-color: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+        .hidden { display: none !important; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; background-color: #0f172a; border-radius: 8px; margin-bottom: 10px; border: 1px solid #334155; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo">👑 InterClass - Espace Admin</div>
+        <a href="index.html" style="color: #94a3b8; text-decoration: none; font-size: 0.9rem;">← Retour au site principal</a>
+    </div>
+
+    <!-- ECRAN DE CONNEXION ADMIN -->
+    <div id="login-card" class="card">
+        <h2>Connexion Administrateur</h2>
+        <p style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 15px;">Veuillez saisir votre code d'accès sécurisé pour gérer les inscriptions.</p>
+        
+        <label for="admin-code">Code secret Admin :</label>
+        <input type="password" id="admin-code" placeholder="Entrez le code secret...">
+        
+        <button class="btn" onclick="checkAdminCode()">Se connecter</button>
+        <p id="error-msg" style="color: #ef4444; font-size: 0.85rem; margin-top: 10px; display: none;">Code incorrect. Veuillez réessayer.</p>
+    </div>
+
+    <!-- PANNEAU DE GESTION ADMIN -->
+    <div id="dashboard-card" class="card hidden">
+        <h2>Gestion des Inscriptions & Points</h2>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 20px;">Validez les élèves ayant réglé leurs frais (500 FCFA) pour créditer leurs 2 000 Points.</p>
+        
+        <h3>Demandes en attente</h3>
+        <div id="requests-list">
+            <!-- Les demandes s'afficheront ici -->
+        </div>
+    </div>
+
+    <script>
+        const SECRET_CODE = "1927";
+
+        function checkAdminCode() {
+            const input = document.getElementById('admin-code').value;
+            const error = document.getElementById('error-msg');
+
+            if (input === SECRET_CODE) {
+                document.getElementById('login-card').classList.add('hidden');
+                document.getElementById('dashboard-card').classList.remove('hidden');
+                loadRequests();
+            } else {
+                error.style.display = "block";
+            }
+        }
+
+        function loadRequests() {
+            const container = document.getElementById('requests-list');
+            const data = JSON.parse(localStorage.getItem('interclass_data')) || { users: [] };
+            
+            const pendingUsers = data.users.filter(u => u.status === 'pending');
+
+            if (pendingUsers.length === 0) {
+                container.innerHTML = "<p style='color: #64748b; margin-top: 10px;'>Aucune demande de paiement en attente pour le moment.</p>";
+                return;
+            }
+
+            container.innerHTML = "";
+            pendingUsers.forEach(user => {
+                const item = document.createElement('div');
+                item.className = 'item-row';
+                item.innerHTML = `
+                    <div>
+                        <strong>${user.name}</strong><br>
+                        <small style="color: #94a3b8;">Moyen: ${user.method} | Tel: ${user.phone}</small>
+                    </div>
+                `;
+                
+                const btn = document.createElement('button');
+                btn.className = 'btn-action';
+                btn.innerText = 'Valider (2000 PTS)';
+                btn.onclick = () => validateUser(user.id);
+
+                item.appendChild(btn);
+                container.appendChild(item);
+            });
+        }
+
+        function validateUser(userId) {
+            let data = JSON.parse(localStorage.getItem('interclass_data')) || { users: [] };
+            
+            const userIndex = data.users.findIndex(u => u.id === userId);
+            if (userIndex !== -1) {
+                data.users[userIndex].status = 'confirmed';
+                data.users[userIndex].points = 2000;
+                localStorage.setItem('interclass_data', JSON.stringify(data));
+                alert("Paiement confirmé ! 2 000 Points crédités à l'élève.");
+                loadRequests();
+            }
+        }
+    </script>
+</body>
+      </html>
+  
